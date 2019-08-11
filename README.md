@@ -1,14 +1,6 @@
 # Leagues
 
-Simple Elixir application that serves the football results included in a CSV file.
-
-
-## Improvment from previous version
-
-I refactored repeated code in json and protobuff project folders to modules:
- 
-- [LeaguesData.LeaguesJSONETSUtils](./lib/leagues_data/json/leagues_json_utils.ex)
-- [LeaguesData.LeaguesProtoBufferUtils](./lib/leagues_data/protobuff/leagues_protobuffer_utils.ex)
+ Elixir application that serves through a REST API football results loaded from a CSV file.
 
 ## HTTP Endpoints
 
