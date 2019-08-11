@@ -1,0 +1,46 @@
+version: "2"
+
+services:
+ leagues1:
+   image: leagues-web-docker
+   ports:
+     - 81:4001
+
+ leagues2:
+   image: leagues-web-docker
+   ports:
+     - 82:4001
+
+ leagues3:
+   image: leagues-web-docker
+   ports:
+     - 83:4001
+
+ haproxy:
+    image: haproxy
+    volumes:
+        - ./config/haproxy:/haproxy-override
+        - ./config/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+        - "80:80"
+
+ prometheus:
+   image: prom/prometheus
+   depends_on:
+     - haproxy
+   volumes:
+     - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+   ports:
+     - 9090:9090
+
+ grafana:
+   image: grafana/grafana
+   environment:
+     - GF_SECURITY_ADMIN_PASSWORD=leagues-web
+   volumes:
+     - ./config/grafana/provisioning/:/etc/grafana/provisioning/
+   depends_on:
+     - prometheus
+   ports:
+     - 3000:3000
+

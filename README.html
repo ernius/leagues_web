@@ -1,0 +1,226 @@
+<h1>Leagues</h1>
+<p>Simple Elixir application that serves the football results included in a CSV file.</p>
+<h2>HTTP Endpoints</h2>
+<p>This application provides the following <strong>HTTP</strong> endpoints:</p>
+<h3>/ping</h3>
+<p><strong>HTTP method</strong>: GET</p>
+<p>Dummy endpoint that returns "pong in" followed by the hostname. Useful to test load balancing.</p>
+<p>```</p>
+<blockquote>
+<p>curl http://localhost/ping
+pong in hostname
+```</p>
+</blockquote>
+<h3>/metrics</h3>
+<p><strong>HTTP method</strong>: GET </p>
+<p>Returns a collection of metrics used for <strong>Prometheus</strong></p>
+<h3>/leagues?format={output_format}</h3>
+<p><strong>HTTP method</strong>: GET </p>
+<p>Returns existing leagues and seasons pairs.</p>
+<p>The result is a <em>JSON</em> string if <strong>output_format=json</strong>, or a <em>Protocol Buffers</em> binary format if <strong>output_format=protobuff</strong>.</p>
+<p>Examples: </p>
+<p>```</p>
+<blockquote>
+<p>curl http://localhost/leagues?format=json
+[{"season":"201617","league":"D1"},{"season":"201617","league":"E0"},{"season":"201516","league":"SP2"},{"season":"201617","league":"SP2"},{"season":"201516","league":"SP1"},{"season":"201617","league":"SP1"}]</p>
+<p>curl http://localhost/leagues?format=protobuff
+...
+```</p>
+</blockquote>
+<h3>/leagues/{league_id}/{season_id}/?format={output_format}</h3>
+<p><strong>HTTP method</strong>: GET </p>
+<p>Returns the matches for a given <em>league_id</em> and <em>season_id</em> pair in the specified <em>output_format</em>.</p>
+<p>The result is a <em>JSON</em> string if <strong>output_format</strong>=<strong>json</strong>, or a <em>Protocol Buffers</em> binary format if <strong>output_format</strong>=<strong>protobuff</strong>.</p>
+<p>Examples: </p>
+<p>```</p>
+<blockquote>
+<p>curl http://localhost/leagues/SP1/201617?format=json
+...
+curl http://localhost/leagues/SP1/201617?format=protobuff
+...
+```</p>
+</blockquote>
+<h2>Local and Dockerized Deploy (using Distillery)</h2>
+<p>Pack release</p>
+<p>```</p>
+<blockquote>
+<p>mix deps.get
+```</p>
+</blockquote>
+<p>```</p>
+<blockquote>
+<p>mix release
+```</p>
+</blockquote>
+<p>Start the application in port 4001 in the foreground, like <code>mix run --no-halt</code> or <code>iex -S mix</code></p>
+<p>```</p>
+<blockquote>
+<p>_build/dev/rel/leagues_web/bin/leagues_web foreground</p>
+</blockquote>
+<p>```</p>
+<h2>Docker</h2>
+<p>Build docker application image</p>
+<p>```</p>
+<blockquote>
+<p>docker build -t leagues-web-docker .
+```</p>
+</blockquote>
+<p>Run one dockerized application instance </p>
+<p>```</p>
+<blockquote>
+<p>docker run --rm  leagues-web-docker 
+```</p>
+</blockquote>
+<p>Test call</p>
+<p>```</p>
+<blockquote>
+<p>curl http://172.17.0.2:4001/leagues?format=json
+```</p>
+</blockquote>
+<p>Stop</p>
+<p>```</p>
+<blockquote>
+<p>docker container stop container-id
+```</p>
+</blockquote>
+<h2>Docker Compose</h2>
+<p>Starts: <strong>3 application instances</strong>, a <strong>HAProxy</strong> load balancer, a <strong>Prometheus</strong> application that pulls metrics from the 3 application instances, and a <strong>Grafana</strong> viewer for the collected metrics.</p>
+<p>```</p>
+<blockquote>
+<p>docker-compose up
+```</p>
+</blockquote>
+<p>Tests that the 3 applications instances are working by pinging 3 times, and checking that 3 different hostnames are returned with the following command:</p>
+<p>```</p>
+<blockquote>
+<p>for i in {1..3}; do curl  http://localhost/ping;echo ""; done
+```</p>
+</blockquote>
+<p>Each application instance can be directly accessed (bypassing the haproxy at port 80) at the following urls:
+     - <a href="http://localhost:81/ping">http://localhost:81/ping</a>
+     - <a href="http://localhost:81/ping">http://localhost:82/ping</a>
+     - <a href="http://localhost:81/ping">http://localhost:83/ping</a>     </p>
+<p><strong>Grafana</strong> metrics viewer can be accessed at <a href="http://localhost:3000">http://localhost:3000</a> (user: admin, password:leagues-web)</p>
+<p><strong>Prometheus</strong> scraper instance is at <a href="http://localhost:9090">http://localhost:9090</a>. In <a href="http://localhost:9090/targets">http://localhost:9090/targets</a> we can see the 3 scraped application instances.</p>
+<h2>Kubernetes</h2>
+<p>Start <code>minikube</code></p>
+<p>```</p>
+<blockquote>
+<p>minikube start
+```</p>
+</blockquote>
+<p>Deploy</p>
+<p>```</p>
+<blockquote>
+<p>eval $(minikube docker-env)
+cd config/kubernetes/
+kubectl create -f leagues-web-deployment.yaml
+kubectl create -f leagues-web-service.yaml</p>
+</blockquote>
+<p>```</p>
+<p>Starts application</p>
+<p>```</p>
+<blockquote>
+<p>minikube service leagues-web-service
+```</p>
+</blockquote>
+<h2>API Documentation</h2>
+<p><a href="./doc/index.html">Documentation</a></p>
+<p>Generation <code>mix docs</code></p>
+<h2>Testing</h2>
+<p>Run <code>mix test</code> to run tests.</p>
+<h2>Configuration <a href="./config/config.exs">config.exs</a>.</h2>
+<p>The <em>port</em>, and the name of the <em>CSV file name</em> can be configured through <code>rest_api_port:</code> and <code>leagues_csv_file:</code>.</p>
+<p>The CSV file is loaded from the application's <code>priv</code> directory.</p>
+<p>The available modules for the different output formats are configured in the <code>data_modules:</code> map entry.</p>
+<h2>Stack of technologies</h2>
+<ul>
+<li>
+<p><em>Plug</em> for HTTP requests routing.</p>
+</li>
+<li>
+<p><em>Cowboy</em> for the HTTP server.</p>
+</li>
+<li>
+<p><em>Poison</em> for JSON encoding.</p>
+</li>
+<li>
+<p><em>exprotobuf</em> for Protocol Buffers encoding.</p>
+</li>
+<li>
+<p><em>StreamData</em> for data generation and property-based testing.</p>
+</li>
+<li>
+<p><em>Ex-doc</em> for API documentation generation.</p>
+</li>
+<li>
+<p><em>Distillery</em> for application packaging.</p>
+</li>
+<li>
+<p><em>Prometheus</em> stack for metrics.</p>
+</li>
+</ul>
+<p>Why not Webmachine insted of Plug? Webmachine allows you not to have to manually set status codes or supply response headers. This leads to a very declarative style. However, it is only compatible with mochiweb, and not updated for more modern HTTP server libraries as Cowboy.</p>
+<h2>Solution description</h2>
+<p>HTTP requests are served by a Cowboy HTTP server, and routed via the Plug module <a href="./lib/leagues_web/leagues_web_endpoint.ex">LeaguesWeb.LeaguesWebEndpoint</a>. Information requests are directly derived to the module <a href="./lib/leagues_data/leagues_data.ex">LeaguesData.LeaguesData</a>, which depending on the requested format (<em>json</em> or <em>protobuff</em>) pulls information with the specified format.</p>
+<h3>Plug Routes</h3>
+<p>Routes are handled in the Plug module <a href="./lib/leagues_web/leagues_web_endpoint.ex">LeaguesWeb.LeaguesWebEndpoint</a>.</p>
+<h3>Data Providers</h3>
+<p>Data providers must implement the <strong>behavior</strong> specified in module <a href="lib/leagues_data/leagues_data_behavior.ex">LeaguesData.LeaguesDataBehavior</a></p>
+<p>New data providers could be easily added in the config file <a href="./config/config.exs">confix.exs</a>.</p>
+<p><a href="./lib/leagues_data/leagues_data.ex">LeaguesData.LeaguesData</a> is the entry point to the following four implementations:</p>
+<p>Using a <strong>GenServer</strong> agent:</p>
+<ul>
+<li>
+<p><a href="./lib/leagues_data/json/leagues_json.ex">LeaguesData.LeaguesJSON</a>) for JSON format</p>
+</li>
+<li>
+<p><a href="./lib/leagues_data/protobuff/leagues_protobuffer.ex">LeaguesData.LeaguesProtoBuffer</a> for Protocol Buffers format</p>
+</li>
+</ul>
+<p>Using the <strong>Erlang Term Storage (ETS)</strong>:</p>
+<ul>
+<li>
+<p><a href="./lib/leagues_data/json/leagues_json_ets.ex">LeaguesData.LeaguesJSONETS</a>) for JSON format</p>
+</li>
+<li>
+<p><a href="./lib/leagues_data/protobuff/leagues_protobuffer_ets.ex">LeaguesData.LeaguesProtoBufferETS</a> for Protocol Buffers format</p>
+</li>
+</ul>
+<p>These modules <em>load</em> the CSV, and <em>encode</em> it in the expected output format in memory at application's <em>initialization time</em>. Thus no data transformation is done when requests are handled.</p>
+<p>The first two implementations are isolated through <code>GenServer</code> agents, from which data can be pulled through synchronous messages.</p>
+<p>The second two are just module calls that use the ETS to store and retrieve the data.</p>
+<p>The <code>GenServer</code> are added to the application's children specification in <a href="./lib/leagues_web/application.ex">LeaguesWeb.Application</a>. In this way they are supervised, and so automatically restarted in case of fail. In the case of plain modules, they are just initialized and then filtered from the application's children list.</p>
+<p>The following lines show that the ETS implementation is more performant than the <code>GenServer</code> implementation, thus ETS implementation is used.</p>
+<p>```
+iex(12)&gt; :timer.tc(fn -&gt; LeaguesData.LeaguesJSON.leagues() end)
+{46,
+ "[{\"season\":\"201617\",\"league\":\"D1\"},{\"season\":\"201617\",\"league\":\"E0\"},{\"season\":\"201516\",\"league\":\"SP2\"},{\"season\":\"201617\",\"league\":\"SP2\"},{\"season\":\"201516\",\"league\":\"SP1\"},{\"season\":\"201617\",\"league\":\"SP1\"}]"}</p>
+<p>iex(13)&gt; :timer.tc(fn -&gt; LeaguesData.LeaguesJSONETS.leagues() end)
+{13,
+ "[{\"season\":\"201617\",\"league\":\"D1\"},{\"season\":\"201617\",\"league\":\"E0\"},{\"season\":\"201516\",\"league\":\"SP2\"},{\"season\":\"201617\",\"league\":\"SP2\"},{\"season\":\"201516\",\"league\":\"SP1\"},{\"season\":\"201617\",\"league\":\"SP1\"}]"}  <br />
+```</p>
+<p>However, <code>GenServer</code> option can be used by just un-commenting it from <em>config.ex</em>, and commenting the ETS entry. Also, the two implementations can coexist by just adding more formats to the <code>data_modules:</code> map (as the commented "json2" and "protobuff2" entries) in file <em>config.ex</em>.</p>
+<p>Protocol Buffer messages are specified in the module <a href="./lib/leagues_data/protobuff/leagues_messages.ex">LeaguesData.LeaguesMessages</a>.</p>
+<h2>HAProxy</h2>
+<p>The <em>HAProxy</em> configuration file can be found at <a href="./config/haproxy/haproxy.cfg">haproxy.cfg</a>. The essential fragment is:</p>
+<p><code>backend app  
+        balance roundrobin  
+        mode http  
+        server srv1 leagues1:4001
+        server srv2 leagues2:4001
+        server srv3 leagues3:4001</code></p>
+<p>The above lines configure the HTTP load balancer to serve our 3 three application instances <code>leagues1:4001</code>, <code>leagues2:4001</code>, and <code>leagues1:4001</code>. The <code>leaguesX</code> names come from the <a href="docker-compose.yml">docker-compose.yml</a>, where the service applications instances are defined.</p>
+<h2>Metrics</h2>
+<p><strong>Prometheus</strong> and <strong>Grafana</strong> are a common combination of tools to monitor systems. Prometheus pulls metrics from endpoint <a href="http://localhost/metrics">http://localhost/metrics</a>, and using Grafana we can view the pulled metrics, configure custom dashboards, and add notifications via Slack, PagerDuty, etc. Prometheus pulling application is external to this web application, so it can be easily stopped, and the potential application's overload caused by metrics will automatically end. We can also tune in Prometheus' pulling /scrape interval/.</p>
+<p>The file <a href="./config/prometheus/prometheus.yml">prometheus.yml</a> configures Prometheus to pull from the 3 application instances.</p>
+<p><code>scrape_configs:
+  # The job name is added as a label `job=&lt;job_name&gt;` to any timeseries scraped from this config.
+  - job_name: "leagues"
+    scrape_interval: "15s"
+    static_configs:
+      - targets: ['leagues1:4001', 'leagues2:4001', 'leagues3:4001']</code></p>
+<p>We use the same endpoints names used in HAProxy configuration. We do not pull metrics through the HAProxy, as metrics contains information from the running OS, thus should be collected for each application instance.</p>
+<p>By default Prometheus collects several metrics and it can be customized. I implemented a basic custom counter in module <a href="./lib/leagues_web/leagues_metrics/leagues_metrics_command_instrumenter.ex">Web.Metrics.CommandInstrumenter</a>. This counter simply counts the number of hits to "http://localhost/leagues?format={format_output}".</p>
+<p>Previous counter information is shown in a "Leagues Command" custom dashboard added to <strong>Grafana</strong>. </p>
+<p>Previous custom dashboard and Prometheus datasource location is loaded from files: <a href="./config/grafana/provisioning/dashboards/dashboard.yaml">dashboard.yaml</a> and <a href="./config/grafana/provisioning/datasources/datasource.yaml">datasource.yaml</a>, as it can be seen in docker-compose file <a href="docker-compose.yml">docker-compose.yml</a>.</p>

@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: leagues-web-deployment
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: leagues-web
+    spec:
+      containers:
+        - name: leagues-web
+          image: leagues-web-docker:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 4001
